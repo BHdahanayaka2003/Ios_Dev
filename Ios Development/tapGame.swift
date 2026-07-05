@@ -1,0 +1,223 @@
+import SwiftUI
+import Combine
+import UIKit
+
+
+
+
+enum GameState {
+    case ready
+    case playing
+    case finished
+}
+
+
+
+
+final class GameViewModel: ObservableObject {
+
+    
+    @Published private(set) var score = 0
+    @Published private(set) var timeRemaining = Constants.roundDuration
+    @Published private(set) var state: GameState = .ready
+
+    
+    @Published private(set) var highScore = UserDefaults.standard.integer(forKey: Constants.highScoreKey)
+
+
+    enum Constants {
+        static let roundDuration = 30
+        static let lowTimeThreshold = 10
+        static let highScoreKey = "com.tapgame.highScore"
+    }
+
+    
+    private var cancellable: AnyCancellable?
+
+    var isLowOnTime: Bool { timeRemaining <= Constants.lowTimeThreshold }
+
+    
+
+    func startGame() {
+        cancellable?.cancel()
+
+        score = 0
+        timeRemaining = Constants.roundDuration
+        state = .playing
+
+        cancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.tick()
+            }
+    }
+
+    func tap() {
+        guard state == .playing else { return }
+        score += 1
+    }
+
+    func playAgain() {
+        startGame()
+    }
+
+    
+
+    private func tick() {
+        guard timeRemaining > 0 else {
+            endGame()
+            return
+        }
+        timeRemaining -= 1
+    }
+
+    private func endGame() {
+        cancellable?.cancel()
+        cancellable = nil
+        state = .finished
+
+        if score > highScore {
+            highScore = score
+            UserDefaults.standard.set(highScore, forKey: Constants.highScoreKey)
+        }
+    }
+}
+
+
+
+
+enum HapticManager {
+    private static let tapGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private static let resultGenerator = UINotificationFeedbackGenerator()
+
+    static func tap() {
+        tapGenerator.impactOccurred()
+    }
+
+    static func gameOver(isNewHighScore: Bool) {
+        resultGenerator.notificationOccurred(isNewHighScore ? .success : .warning)
+    }
+}
+
+
+struct tapGame  : View {
+    @StateObject private var game = GameViewModel()
+    @State private var tapScale: CGFloat = 1.0
+
+    var body: some View {
+        VStack(spacing: 30) {
+            switch game.state {
+            case .ready, .playing:
+                gameView
+            case .finished:
+                gameOverView
+            }
+        }
+        .padding()
+        .animation(.easeInOut, value: game.state)
+        .onChange(of: game.state) { newState in
+            if newState == .finished {
+                HapticManager.gameOver(isNewHighScore: game.score >= game.highScore)
+            }
+        }
+    }
+
+    
+
+    private var gameView: some View {
+        VStack(spacing: 30) {
+            Text("Time: \(game.timeRemaining)s")
+                .font(.title2)
+                .foregroundColor(game.isLowOnTime ? .red : .primary)
+                .contentTransition(.numericText())
+                .accessibilityLabel("\(game.timeRemaining) seconds remaining")
+
+            VStack(spacing: 4) {
+                Text("Score: \(game.score)")
+                    .font(.largeTitle)
+                    .bold()
+                    .contentTransition(.numericText())
+
+                Text("Best: \(game.highScore)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            Button(action: tapButtonTapped) {
+                Text("TAP ME")
+                    .font(.title)
+                    .frame(width: 200, height: 200)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .clipShape(Circle())
+                    .scaleEffect(tapScale)
+            }
+            .disabled(game.state != .playing)
+            .opacity(game.state == .playing ? 1 : 0.5)
+            .accessibilityHint("Tap rapidly to increase your score")
+
+            if game.state == .ready {
+                Button("Start Game") {
+                    game.startGame()
+                }
+                .font(.title2)
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+        }
+    }
+
+   
+
+    private var gameOverView: some View {
+        VStack(spacing: 20) {
+            Text("Game Over!")
+                .font(.largeTitle)
+                .bold()
+                .foregroundColor(.red)
+
+            Text("Final Score: \(game.score)")
+                .font(.title)
+
+            if game.score >= game.highScore && game.score > 0 {
+                Label("New High Score!", systemImage: "star.fill")
+                    .font(.headline)
+                    .foregroundColor(.yellow)
+            } else {
+                Text("Best: \(game.highScore)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            Button("Play Again") {
+                game.playAgain()
+            }
+            .font(.title2)
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+        }
+    }
+
+  
+
+    private func tapButtonTapped() {
+        game.tap()
+        HapticManager.tap()
+
+        withAnimation(.easeOut(duration: 0.08)) {
+            tapScale = 0.9
+        }
+        withAnimation(.easeOut(duration: 0.08).delay(0.08)) {
+            tapScale = 1.0
+        }
+    }
+}
+
+
+#Preview {
+    tapGame()
+}
