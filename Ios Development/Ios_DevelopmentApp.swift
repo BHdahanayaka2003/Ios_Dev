@@ -11,7 +11,7 @@ import SwiftUI
 struct Ios_DevelopmentApp: App {
     var body: some Scene {
         WindowGroup {
-            tapGame()
+            LightUpGame()
         }
     }
 }
