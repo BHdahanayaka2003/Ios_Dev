@@ -1,6 +1,5 @@
 import SwiftUI
 
-// MARK: - Home View
 struct HomeView: View {
     var body: some View {
         NavigationStack {
@@ -17,7 +16,7 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Clicker Game View
+
 struct ClickerGameView: View {
     @State private var score = 0
     @State private var timeRemaining = 60
@@ -37,7 +36,7 @@ struct ClickerGameView: View {
         .navigationTitle("Tap score game")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            // Clean up timers if user navigates away mid-game
+            
             endGame()
         }
     }
@@ -133,7 +132,7 @@ struct ClickerGameView: View {
     }
 }
 
-// MARK: - Light Up View
+
 struct LightUpGame: View {
     private let gridSize = 3
     @State private var activeIndex: Int? = nil
@@ -156,7 +155,6 @@ struct LightUpGame: View {
         .navigationTitle("Light it up")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            // Clean up timers if user navigates away mid-game
             endGame()
         }
     }
