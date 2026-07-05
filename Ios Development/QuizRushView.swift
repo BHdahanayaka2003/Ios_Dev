@@ -140,7 +140,7 @@ enum QuizRushViewState: Equatable {
 @MainActor
 final class QuizRushViewModel: ObservableObject {
 
-    // Published state the view observes.
+    
     @Published var state: QuizRushViewState = .loading
     @Published var questions: [QuizRushQuestion] = []
     @Published var currentIndex: Int = 0

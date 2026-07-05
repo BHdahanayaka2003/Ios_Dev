@@ -1,14 +1,7 @@
-//
-//  HomeView.swift
-//  Ios Development
-//
-//  Home panel for choosing which game to play.
-//  Replace the ENTIRE contents of your existing HomeView.swift with this file.
-//
 
 import SwiftUI
 
-// MARK: - Model describing each game card
+
 
 struct GameOption: Identifiable {
     let id = UUID()
@@ -18,7 +11,7 @@ struct GameOption: Identifiable {
     let colors: [Color]
 }
 
-// MARK: - HomeView
+
 
 struct HomeViewHub: View {
 
@@ -80,9 +73,7 @@ struct HomeViewHub: View {
         }
     }
 
-    // Routes each card to its real game view.
-    // QuizRushView takes NO parameters (its @StateObject viewModel
-    // initializes itself), so QuizRushView() is correct as-is.
+    
     @ViewBuilder
     private func destination(for title: String) -> some View {
         switch title {
@@ -98,7 +89,7 @@ struct HomeViewHub: View {
     }
 }
 
-// MARK: - Reusable card view
+
 
 private struct GameCard: View {
     let game: GameOption
@@ -145,7 +136,7 @@ private struct GameCard: View {
     }
 }
 
-// MARK: - Preview
+
 
 #Preview {
     HomeViewHub()

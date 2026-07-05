@@ -2,66 +2,97 @@ import SwiftUI
 import Combine
 import UIKit
 
-
-
-
 enum GameState {
     case ready
     case playing
     case finished
 }
 
-
-
-
 final class GameViewModel: ObservableObject {
 
-    
     @Published private(set) var score = 0
     @Published private(set) var timeRemaining = Constants.roundDuration
     @Published private(set) var state: GameState = .ready
 
-    
     @Published private(set) var highScore = UserDefaults.standard.integer(forKey: Constants.highScoreKey)
 
-
-    enum Constants {
-        static let roundDuration = 30
-        static let lowTimeThreshold = 10
-        static let highScoreKey = "com.tapgame.highScore"
-    }
+    
+    @Published private(set) var comboMultiplier = 1
+    private var lastTapTime: Date?
 
     
+    @Published private(set) var buttonColor: Color = .blue
+    @Published private(set) var isPenaltyColor = false
+    private var colorCancellable: AnyCancellable?
+
+    enum Constants {
+        static let roundDuration = 10          // ← updated to match spec
+        static let lowTimeThreshold = 4
+        static let highScoreKey = "com.tapgame.highScore"
+
+        
+        static let comboWindow: TimeInterval = 0.5
+        static let maxCombo = 5
+
+        
+        static let colorSwitchInterval: TimeInterval = 2.0
+    }
+
     private var cancellable: AnyCancellable?
 
     var isLowOnTime: Bool { timeRemaining <= Constants.lowTimeThreshold }
 
-    
-
     func startGame() {
         cancellable?.cancel()
+        colorCancellable?.cancel()
 
         score = 0
         timeRemaining = Constants.roundDuration
         state = .playing
+        comboMultiplier = 1
+        lastTapTime = nil
+        buttonColor = .blue
+        isPenaltyColor = false
 
         cancellable = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.tick()
             }
+
+       
+        colorCancellable = Timer.publish(every: Constants.colorSwitchInterval, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.cycleButtonColor()
+            }
     }
 
     func tap() {
         guard state == .playing else { return }
-        score += 1
+
+        
+        let now = Date()
+        if let last = lastTapTime, now.timeIntervalSince(last) <= Constants.comboWindow {
+            comboMultiplier = min(comboMultiplier + 1, Constants.maxCombo)
+        } else {
+            comboMultiplier = 1
+        }
+        lastTapTime = now
+
+        
+        if isPenaltyColor {
+            comboMultiplier = 1
+            // no score added on penalty tap
+        } else {
+            let bonus = (buttonColor == .green) ? 2 : 1
+            score += comboMultiplier * bonus
+        }
     }
 
     func playAgain() {
         startGame()
     }
-
-    
 
     private func tick() {
         guard timeRemaining > 0 else {
@@ -74,6 +105,8 @@ final class GameViewModel: ObservableObject {
     private func endGame() {
         cancellable?.cancel()
         cancellable = nil
+        colorCancellable?.cancel()
+        colorCancellable = nil
         state = .finished
 
         if score > highScore {
@@ -81,10 +114,18 @@ final class GameViewModel: ObservableObject {
             UserDefaults.standard.set(highScore, forKey: Constants.highScoreKey)
         }
     }
+
+    private func cycleButtonColor() {
+        let outcomes: [(Color, Bool)] = [
+            (.blue, false),
+            (.green, false),   // bonus
+            (.gray, true)      // penalty
+        ]
+        let choice = outcomes.randomElement()!
+        buttonColor = choice.0
+        isPenaltyColor = choice.1
+    }
 }
-
-
-
 
 enum HapticManager {
     private static let tapGenerator = UIImpactFeedbackGenerator(style: .medium)
@@ -99,8 +140,7 @@ enum HapticManager {
     }
 }
 
-
-struct tapGame  : View {
+struct tapGame: View {
     @StateObject private var game = GameViewModel()
     @State private var tapScale: CGFloat = 1.0
 
@@ -122,8 +162,6 @@ struct tapGame  : View {
         }
     }
 
-    
-
     private var gameView: some View {
         VStack(spacing: 30) {
             Text("Time: \(game.timeRemaining)s")
@@ -141,16 +179,24 @@ struct tapGame  : View {
                 Text("Best: \(game.highScore)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+
+                if game.comboMultiplier > 1 {
+                    Text("Combo ×\(game.comboMultiplier)")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                        .transition(.scale)
+                }
             }
 
             Button(action: tapButtonTapped) {
-                Text("TAP ME")
+                Text(game.isPenaltyColor ? "AVOID!" : "TAP ME")
                     .font(.title)
                     .frame(width: 200, height: 200)
-                    .background(Color.blue)
+                    .background(game.buttonColor)
                     .foregroundColor(.white)
                     .clipShape(Circle())
                     .scaleEffect(tapScale)
+                    .animation(.easeInOut(duration: 0.3), value: game.buttonColor)
             }
             .disabled(game.state != .playing)
             .opacity(game.state == .playing ? 1 : 0.5)
@@ -168,8 +214,6 @@ struct tapGame  : View {
             }
         }
     }
-
-   
 
     private var gameOverView: some View {
         VStack(spacing: 20) {
@@ -202,8 +246,6 @@ struct tapGame  : View {
         }
     }
 
-  
-
     private func tapButtonTapped() {
         game.tap()
         HapticManager.tap()
@@ -216,7 +258,6 @@ struct tapGame  : View {
         }
     }
 }
-
 
 #Preview {
     tapGame()
