@@ -24,7 +24,7 @@ struct HomeView: View {
         NavigationStack {
             List {
                 Section("Choose a game") {
-                    NavigationLink(destination: ClickerGameView()) {
+                    NavigationLink(destination: LegacyClickerGameView()) {
                         Label("Tap Frenzy", systemImage: "hand.tap.fill")
                     }
                     NavigationLink(destination: LightUpGame()) {
@@ -39,7 +39,11 @@ struct HomeView: View {
 
 
 
-struct ClickerGameView: View {
+// Renamed from `ClickerGameView` — that name collided with the real,
+// session-recording `TapClickerGameView` in ClickerGameView.swift.
+// This older version is unused by HomeViewHub's routing; kept only for
+// LightUpGame.swift's own standalone `HomeView` preview/list below.
+struct LegacyClickerGameView: View {
     @AppStorage("highScore_tapFrenzy") private var highScore: Int = 0
 
     @State private var score = 0
@@ -236,6 +240,7 @@ struct LightCard: Identifiable {
 
 
 struct LightUpGame: View {
+    @EnvironmentObject var store: GameSessionStore
     @AppStorage("highScore_lightItUp") private var highScore: Int = 0
 
     @State private var cards: [LightCard] = []
@@ -247,6 +252,8 @@ struct LightUpGame: View {
     @State private var level: GameLevel = .l1
     @State private var showLevelUpFlash = false
     @State private var showSettings = false
+    @State private var didRecordThisRound = false
+    @State private var hasStartedRound = false
 
     // Bonus: adjustable round length (30 / 60 / 90s)
     @State private var roundDuration = 60
@@ -407,6 +414,8 @@ struct LightUpGame: View {
         isGameRunning = true
         isGameOver = false
         isNewHighScore = false
+        didRecordThisRound = false
+        hasStartedRound = true
         level = .l1
         setupCards(for: .l1)
 
@@ -489,6 +498,16 @@ struct LightUpGame: View {
             highScore = score
             isNewHighScore = true
         }
+        recordSessionIfNeeded()
+    }
+
+    // Guards against double-recording — endGame() can be triggered both by
+    // the round timer finishing and by `.onDisappear` (if the player backs
+    // out mid-round), and we only want one GameSession per round.
+    func recordSessionIfNeeded() {
+        guard hasStartedRound, !didRecordThisRound else { return }
+        didRecordThisRound = true
+        store.recordSession(gameName: "Light Up", score: score)
     }
 
     func resetGame() {

@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
+#if canImport(UIKit)
 import UIKit
+#endif
 
 enum GameState {
     case ready
@@ -127,6 +129,7 @@ final class GameViewModel: ObservableObject {
     }
 }
 
+#if canImport(UIKit)
 enum HapticManager {
     private static let tapGenerator = UIImpactFeedbackGenerator(style: .medium)
     private static let resultGenerator = UINotificationFeedbackGenerator()
@@ -139,6 +142,18 @@ enum HapticManager {
         resultGenerator.notificationOccurred(isNewHighScore ? .success : .warning)
     }
 }
+#else
+// Fallback for platforms without UIKit (e.g., macOS, watchOS)
+enum HapticManager {
+    static func tap() {
+        // No-op on platforms without UIKit haptics
+    }
+
+    static func gameOver(isNewHighScore: Bool) {
+        // No-op on platforms without UIKit haptics
+    }
+}
+#endif
 
 struct tapGame: View {
     @StateObject private var game = GameViewModel()

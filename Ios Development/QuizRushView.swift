@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 import Combine
 
@@ -237,7 +235,9 @@ final class QuizRushViewModel: ObservableObject {
 
 
 struct QuizRushView: View {
+    @EnvironmentObject var store: GameSessionStore
     @StateObject private var viewModel = QuizRushViewModel()
+    @State private var didRecordThisRound = false
 
     var body: some View {
         ZStack {
@@ -260,6 +260,22 @@ struct QuizRushView: View {
         .task {
             await viewModel.load()
         }
+        .onChange(of: viewModel.showResults) { showResults in
+            if showResults {
+                recordSessionIfNeeded()
+            } else {
+                // A fresh round (via Play Again / retry) starts here.
+                didRecordThisRound = false
+            }
+        }
+    }
+
+    // Guards against double-recording if `.onChange` ever fires more than
+    // once for the same `showResults == true` state.
+    private func recordSessionIfNeeded() {
+        guard !didRecordThisRound else { return }
+        didRecordThisRound = true
+        store.recordSession(gameName: "Quiz Rush", score: viewModel.score)
     }
 
     
@@ -499,5 +515,6 @@ struct QuizRushResultsView: View {
 #Preview {
     NavigationStack {
         QuizRushView()
+            .environmentObject(GameSessionStore.shared)
     }
 }
