@@ -39,10 +39,7 @@ struct HomeView: View {
 
 
 
-// Renamed from `ClickerGameView` — that name collided with the real,
-// session-recording `TapClickerGameView` in ClickerGameView.swift.
-// This older version is unused by HomeViewHub's routing; kept only for
-// LightUpGame.swift's own standalone `HomeView` preview/list below.
+
 struct LegacyClickerGameView: View {
     @AppStorage("highScore_tapFrenzy") private var highScore: Int = 0
 

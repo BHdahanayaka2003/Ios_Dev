@@ -136,21 +136,19 @@ enum ClickerHaptics {
     }
 }
 #else
-// Fallback for platforms without UIKit (e.g., macOS, watchOS)
+
 enum ClickerHaptics {
     static func tap() {
-        // No-op on platforms without UIKit haptics
+        
     }
 
     static func gameOver(isNewHighScore: Bool) {
-        // No-op on platforms without UIKit haptics
+       
     }
 }
 #endif
 
-// Renamed from `tapGame` to `ClickerGameView` so it matches the routing
-// used in HomeViewHub.destination(for:) — previously that switch pointed
-// at a `ClickerGameView` that didn't exist here, and this view was never
+
 // actually reachable in the tab flow.
 struct TapClickerGameView: View {
     @EnvironmentObject var store: GameSessionStore
@@ -275,7 +273,7 @@ struct TapClickerGameView: View {
         }
     }
 
-    // Guards against double-recording if `.onChange` ever fires more than once
+  
     // for the same finished state (e.g. due to SwiftUI re-evaluations).
     private func recordSessionIfNeeded() {
         guard !didRecordThisRound else { return }

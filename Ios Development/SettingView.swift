@@ -4,7 +4,7 @@ import UserNotifications
 import UIKit
 #endif
 
-// MARK: - Daily Challenge Notification Scheduling
+
 
 enum DailyChallengeNotifications {
     static let identifier = "com.gamehub.dailyChallenge"
@@ -21,8 +21,7 @@ enum DailyChallengeNotifications {
         }
     }
 
-    /// Schedules (or reschedules) a repeating daily local notification at the given time.
-    static func schedule(hour: Int, minute: Int) {
+        static func schedule(hour: Int, minute: Int) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
@@ -45,7 +44,7 @@ enum DailyChallengeNotifications {
     }
 }
 
-// MARK: - Settings Screen
+
 
 struct SettingsView: View {
     @EnvironmentObject var store: GameSessionStore
@@ -58,8 +57,7 @@ struct SettingsView: View {
     @State private var showPermissionDeniedAlert = false
     @State private var showResetConfirmationToast = false
 
-    // Bridges the stored hour/minute Ints to a Date for the DatePicker,
-    // and reschedules the notification whenever the picker changes.
+    
     private var dailyChallengeTime: Binding<Date> {
         Binding(
             get: {
@@ -176,9 +174,7 @@ struct SettingsView: View {
         }
     }
 
-    // If the person revoked notification permission in iOS Settings since
-    // last time, reflect that here instead of showing a toggle that's on
-    // but silently doesn't fire.
+   
     private func syncAuthorizationStatus() {
         DailyChallengeNotifications.currentAuthorizationStatus { status in
             if status == .denied {

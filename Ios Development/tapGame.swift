@@ -143,14 +143,14 @@ enum HapticManager {
     }
 }
 #else
-// Fallback for platforms without UIKit (e.g., macOS, watchOS)
+
 enum HapticManager {
     static func tap() {
-        // No-op on platforms without UIKit haptics
+        
     }
 
     static func gameOver(isNewHighScore: Bool) {
-        // No-op on platforms without UIKit haptics
+        
     }
 }
 #endif

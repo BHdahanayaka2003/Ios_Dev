@@ -270,8 +270,7 @@ struct QuizRushView: View {
         }
     }
 
-    // Guards against double-recording if `.onChange` ever fires more than
-    // once for the same `showResults == true` state.
+    
     private func recordSessionIfNeeded() {
         guard !didRecordThisRound else { return }
         didRecordThisRound = true

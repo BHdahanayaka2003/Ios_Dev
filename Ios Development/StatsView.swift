@@ -1,17 +1,12 @@
 import SwiftUI
 import Charts
 
-// MARK: - Stats Screen
-//
-// Reads directly from GameSessionStore (already populated by
-// `store.recordSession(gameName:score:)` at the end of every round).
-// No new persistence needed — this view is purely derived state.
+
 
 struct StatsView: View {
     @EnvironmentObject var store: GameSessionStore
 
-    // Keep a stable, sensible display order for known games, then
-    // append anything unrecognized (e.g. future games) alphabetically.
+    
     private var gameNames: [String] {
         let known = ["Tap Game", "Light Up", "Quiz Rush"]
         let present = Set(store.sessions.map(\.gameName))
@@ -64,7 +59,7 @@ struct StatsView: View {
         }
     }
 
-    // MARK: Summary
+    
 
     private var summaryCards: some View {
         HStack(spacing: 14) {
@@ -84,7 +79,7 @@ struct StatsView: View {
         .padding(.horizontal)
     }
 
-    // MARK: Chart
+    
 
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -128,7 +123,7 @@ struct StatsView: View {
         .padding(.horizontal)
     }
 
-    // MARK: Personal bests
+    
 
     private var personalBestsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -170,7 +165,7 @@ struct StatsView: View {
         }
     }
 
-    // MARK: Recent games
+   
 
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -187,7 +182,7 @@ struct StatsView: View {
         }
     }
 
-    // MARK: Empty state
+    
 
     private var emptyState: some View {
         VStack(spacing: 16) {
@@ -204,7 +199,7 @@ struct StatsView: View {
         }
     }
 
-    // MARK: Shared styling helpers (mirrors GameMapView's icon/color mapping)
+   
 
     private func icon(for gameName: String) -> String {
         switch gameName {
