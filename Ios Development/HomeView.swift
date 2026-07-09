@@ -1,7 +1,4 @@
-
 import SwiftUI
-
-
 
 struct GameOption: Identifiable {
     let id = UUID()
@@ -11,9 +8,43 @@ struct GameOption: Identifiable {
     let colors: [Color]
 }
 
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            HomeViewHub()
+                .tabItem {
+                    Label("Games", systemImage: "gamecontroller.fill")
+                }
 
+            StatsView()
+                .tabItem {
+                    Label("Stats", systemImage: "chart.bar.fill")
+                }
+
+            GameMapView()
+                .tabItem {
+                    Label("Play Map", systemImage: "map.fill")
+                }
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+        }
+        // Inject the session store for the entire application lifecycle
+        .environmentObject(GameSessionStore.shared)
+        .onAppear {
+            // Warm up location as early as possible so it's usually already
+            // available by the time the user finishes their first round,
+            // instead of only requesting it once a game already ended.
+            LocationManager.shared.requestPermission()
+            LocationManager.shared.requestOneShotLocation()
+        }
+    }
+}
 
 struct HomeViewHub: View {
+    @EnvironmentObject var store: GameSessionStore
 
     private let games: [GameOption] = [
         GameOption(
@@ -40,7 +71,6 @@ struct HomeViewHub: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-
                     header
 
                     VStack(spacing: 18) {
@@ -73,7 +103,7 @@ struct HomeViewHub: View {
         }
     }
 
-    
+    // Routes to the REAL game views — no placeholders.
     @ViewBuilder
     private func destination(for title: String) -> some View {
         switch title {
@@ -82,14 +112,17 @@ struct HomeViewHub: View {
         case "Quiz Rush":
             QuizRushView()
         case "Tap Game":
-            tapGame()
+            // NOTE: was `ClickerGameView()`, which collided with the
+            // unrelated (and non-recording) `ClickerGameView` struct
+            // still defined in LightUpGame.swift. TapClickerGameView
+            // is the one that calls store.recordSession(...), which
+            // Stats and the Play Map both depend on.
+            TapClickerGameView()
         default:
             EmptyView()
         }
     }
 }
-
-
 
 private struct GameCard: View {
     let game: GameOption
@@ -136,8 +169,6 @@ private struct GameCard: View {
     }
 }
 
-
-
 #Preview {
-    HomeViewHub()
+    MainTabView()
 }
